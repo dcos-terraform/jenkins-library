@@ -1,5 +1,6 @@
 #!/usr/bin/env groovy
 def call() {
+  def ci_script_bash = libraryResource 'com/mesosphere/global/ci-deploy.sh'
   pipeline {
     agent none
     stages {
@@ -101,7 +102,6 @@ def call() {
               file(credentialsId: 'dcos-terraform-ci-gcp', variable: 'GOOGLE_APPLICATION_CREDENTIALS')
             ]) {
               script {
-                def ci_script_bash = libraryResource 'com/mesosphere/global/ci-deploy.sh'
                 writeFile file: 'ci-deploy.sh', text: ci_script_bash
               }
               sh """
@@ -123,7 +123,6 @@ def call() {
                 file(credentialsId: 'dcos-terraform-ci-gcp', variable: 'GOOGLE_APPLICATION_CREDENTIALS')
               ]) {
                 script {
-                  def ci_script_bash = libraryResource 'com/mesosphere/global/ci-deploy.sh'
                   writeFile file: 'ci-deploy.sh', text: ci_script_bash
                 }
                 sh """
