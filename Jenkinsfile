@@ -1,6 +1,8 @@
 #!/usr/bin/env groovy
 pipeline {
-  agent none
+  agent {
+    label 'terraform'
+  }
   stages {
     stage('Tests') {
       steps {
