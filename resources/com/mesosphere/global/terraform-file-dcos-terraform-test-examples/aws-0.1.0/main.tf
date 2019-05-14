@@ -13,7 +13,7 @@ resource "random_id" "cluster_name" {
 }
 
 module "dcos" {
-  source  = "dcos-terrafomr/dcos/aws"
+  source  = "dcos-terraform/dcos/aws"
   version = "~> 0.1.0"
 
   cluster_name        = "${random_id.cluster_name.hex}"
