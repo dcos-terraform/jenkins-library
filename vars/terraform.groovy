@@ -91,7 +91,7 @@ def call() {
           }
         }
       }
-      stage("Determine Universal Installer") {
+      stage("Check Environment Conditions") {
         agent { label 'dcos-terraform-cicd' }
         steps {
                 script {
@@ -103,7 +103,10 @@ def call() {
         }
       stage('Integration Test') {
         when {
-            environment name: "IS_UNIVERSAL_INSTALLER", value: "YES"
+            expression {
+               env.UNIVERSAL_INSTALLER_BASE_VERSION != "null"
+               env.IS_UNIVERSAL_INSTALLER == "YES"
+            }
         }
         agent { label 'dcos-terraform-cicd' }
         steps {
