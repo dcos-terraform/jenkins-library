@@ -108,6 +108,7 @@ def call() {
         when {
             allOf {
                 expression { env.UNIVERSAL_INSTALLER_BASE_VERSION != "null" }
+                expression { env.UNIVERSAL_INSTALLER_BASE_VERSION != "" }
                 environment name: 'IS_UNIVERSAL_INSTALLER', value: 'YES'
             }
         }
