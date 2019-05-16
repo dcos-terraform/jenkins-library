@@ -2,12 +2,13 @@
 
 if [[ ! -f "ci-deploy.state" ]]
 then
+  set -x
   TMP_DCOS_TERRAFORM=$(mktemp -d); echo "TMP_DCOS_TERRAFORM=${TMP_DCOS_TERRAFORM}" > ci-deploy.state
   LOG_STATE=${TMP_DCOS_TERRAFORM}/log_state; echo "LOG_STATE=${TMP_DCOS_TERRAFORM}/log_state" >> ci-deploy.state
   CI_DEPLOY_STATE=$PWD/ci-deploy.state; echo "CI_DEPLOY_STATE=$PWD/ci-deploy.state" >> ci-deploy.state
   DCOS_CONFIG=${TMP_DCOS_TERRAFORM}; echo "DCOS_CONFIG=${TMP_DCOS_TERRAFORM}" >> ci-deploy.state
   echo ${DCOS_CONFIG}
-  git clone --single-branch --branch terraform_file_method_ci_deploy https://github.com/dcos-terraform/jenkins-library.git
+  git clone --single-branch --branch terraform_file_method_ci_deploy2 https://github.com/dcos-terraform/jenkins-library.git
   cp -fr jenkins-library/resources/com/mesosphere/global/terraform-file-dcos-terraform-test-examples/$2-$3/ "${TMP_DCOS_TERRAFORM}" || exit 1
 else
   eval "$(cat ci-deploy.state)"
