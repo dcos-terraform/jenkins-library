@@ -9,7 +9,7 @@ then
   DCOS_CONFIG=${TMP_DCOS_TERRAFORM}; echo "DCOS_CONFIG=${TMP_DCOS_TERRAFORM}" >> ci-deploy.state
   echo ${DCOS_CONFIG}
   git clone --single-branch --branch terraform_file_method_ci_deploy2 https://github.com/dcos-terraform/jenkins-library.git
-  cp -fr jenkins-library/resources/com/mesosphere/global/terraform-file-dcos-terraform-test-examples/$2-$3/ "${TMP_DCOS_TERRAFORM}" || exit 1
+  cp -fr jenkins-library/resources/com/mesosphere/global/terraform-file-dcos-terraform-test-examples/$2-$3/. "${TMP_DCOS_TERRAFORM}" || exit 1
   ls -l "${TMP_DCOS_TERRAFORM}" # debug purpose
 	env # debug
 else
