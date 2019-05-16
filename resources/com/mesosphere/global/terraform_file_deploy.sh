@@ -19,14 +19,14 @@ fi
 if [[ -z "${WORKSPACE}" ]]; then echo "Updating ENV for non-Jenkins env";
   WORKSPACE=$PWD;
   GIT_URL=$(git -C ${WORKSPACE} remote -v | grep origin | tail -1 | awk '{print $2}');
-  GIT_BRANCH=$(git -C ${WORKSPACE} branch | awk '{print $2}');
+  CHANGE_BRANCH=$(git -C ${WORKSPACE} branch | awk '{print $2}');
 fi
 
 function build_task() {
   set -x
   cd ${TMP_DCOS_TERRAFORM} || exit 1
   chmod +x *.cmd # make all cmd runnable
-  generate_terraform_file $GIT_URL $GIT_BRANCH
+  generate_terraform_file $GIT_URL $CHANGE_BRANCH
   terraform init
   ./deploy.cmd # Deploy
   # deploy_test_app # disabling the test for the time being
