@@ -92,6 +92,7 @@ def call() {
         }
       }
       stage("Determine Universal Installer") {
+        agent { label 'dcos-terraform-cicd' }
         steps {
                 script {
                     env.PROVIDER = sh (returnStdout: true, script: "echo ${env.GIT_URL} | egrep -o 'terraform-\\w+-.*'| cut -d'-' -f2").trim()
