@@ -91,7 +91,19 @@ def call() {
           }
         }
       }
+      stage("Determine Universal Installer") {
+        steps {
+                script {
+                    env.PROVIDER = sh (returnStdout: true, script: "echo ${env.GIT_URL} | egrep -o 'terraform-\w+-.*'| cut -d'-' -f2").trim()
+                    env.UNIVERSAL_INSTALLER_BASE_VERSION = sh (returnStdout: true, script: "echo ${env.CHANGE_BRANCH} | cut -d'/' -f2").trim()
+                    env.IS_UNIVERSAL_INSTALLER = sh (returnStdout: true, script: "TFENV=$(echo ${env.GIT_URL} | egrep -o 'terraform-\w+-.*'); [ -z $TFENV ] || echo 'YES'").trim()
+                }
+            }
+        }
       stage('Integration Test') {
+        when {
+            environment name: "IS_UNIVERSAL_INSTALLER", value: "YES"
+        }
         agent { label 'dcos-terraform-cicd' }
         steps {
           ansiColor('xterm') {
@@ -101,7 +113,7 @@ def call() {
               file(credentialsId: 'dcos-terraform-ci-gcp', variable: 'GOOGLE_APPLICATION_CREDENTIALS')
             ]) {
               script {
-                def ci_script_bash = libraryResource 'com/mesosphere/global/ci-deploy.sh'
+                def ci_script_bash = libraryResource 'com/mesosphere/global/terraform_file_deploy.sh'
                 writeFile file: 'ci-deploy.sh', text: ci_script_bash
               }
               sh """
@@ -109,7 +121,7 @@ def call() {
                 set +o xtrace
                 set -o errexit
 
-                sh ./ci-deploy.sh --build
+                sh ./ci-deploy.sh --build ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION}
               """
             }
           }
@@ -123,7 +135,7 @@ def call() {
                 file(credentialsId: 'dcos-terraform-ci-gcp', variable: 'GOOGLE_APPLICATION_CREDENTIALS')
               ]) {
                 script {
-                  def ci_script_bash = libraryResource 'com/mesosphere/global/ci-deploy.sh'
+                  def ci_script_bash = libraryResource 'com/mesosphere/global/terraform_file_deploy.sh'
                   writeFile file: 'ci-deploy.sh', text: ci_script_bash
                 }
                 sh """
@@ -131,7 +143,7 @@ def call() {
                   set +o xtrace
                   set -o errexit
 
-                  sh ./ci-deploy.sh --post_build
+                  sh ./ci-deploy.sh --post_build ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION}
                 """
               }
             }
