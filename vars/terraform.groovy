@@ -103,9 +103,9 @@ def call() {
         }
       stage('Integration Test') {
         when {
-            expression {
-               env.UNIVERSAL_INSTALLER_BASE_VERSION != "null"
-               env.IS_UNIVERSAL_INSTALLER == "YES"
+            allOf {
+                expression { env.UNIVERSAL_INSTALLER_BASE_VERSION != "null" }
+                environment name: 'IS_UNIVERSAL_INSTALLER', value: 'YES'
             }
         }
         agent { label 'dcos-terraform-cicd' }
