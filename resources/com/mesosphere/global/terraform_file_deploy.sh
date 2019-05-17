@@ -28,10 +28,10 @@ function build_task() {
   chmod +x *.cmd # make all cmd runnable
   generate_terraform_file $GIT_URL $CHANGE_BRANCH
   terraform init
-  ./deploy.cmd # Deploy
+  ./deploy.cmd || exit 1 # Deploy
   # deploy_test_app # disabling the test for the time being
-  ./expand.cmd # Expand
-  ./upgrade.cmd # Upgrade
+  ./expand.cmd || exit 1 # Expand
+  ./upgrade.cmd || exit 1 # Upgrade
 }
 
 function generate_terraform_file() {
