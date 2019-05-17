@@ -26,7 +26,7 @@ function build_task() {
   set -x
   cd ${TMP_DCOS_TERRAFORM} || exit 1
   chmod +x *.cmd # make all cmd runnable
-  generate_terraform_file $GIT_URL $CHANGE_BRANCH
+  generate_terraform_file $GIT_URL ${CHANGE_BRANCH:-$BRANCH_NAME}
   eval "$(ssh-agent)"; if [[ ! -f "$PWD/ssh-key" ]]; then rm ssh-key.pub; ssh-keygen -t rsa -b 4096 -f $PWD/ssh-key -P ''; fi; ssh-add $PWD/ssh-key
   terraform init
   ./deploy.cmd || exit 1 # Deploy
