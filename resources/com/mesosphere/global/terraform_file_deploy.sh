@@ -27,6 +27,7 @@ function build_task() {
   cd ${TMP_DCOS_TERRAFORM} || exit 1
   chmod +x *.cmd # make all cmd runnable
   generate_terraform_file $GIT_URL $CHANGE_BRANCH
+  eval "$(ssh-agent)"; if [[ ! -f "$PWD/ssh-key" ]]; then rm ssh-key.pub; ssh-keygen -t rsa -b 4096 -f $PWD/ssh-key -P ''; fi; ssh-add $PWD/ssh-key
   terraform init
   ./deploy.cmd || exit 1 # Deploy
   # deploy_test_app # disabling the test for the time being
@@ -52,7 +53,7 @@ function post_build_task() {
   set -x
   cd ${TMP_DCOS_TERRAFORM} || exit 1
   chmod +x *.cmd # make all cmd runnable
-  ./destroy.cmd # Destroy
+  ./destroy.cmd || exit 1 # Destroy
   rm -fr ${CI_DEPLOY_STATE} ${TMP_DCOS_TERRAFORM} jenkins-library
 }
 
@@ -115,7 +116,7 @@ function main() {
       --build) build_task; exit 0;;
       --post_build) post_build_task; exit 0;;
     esac
-    echo "invalid parameter $1. Must be one of --build or --post_build"
+    echo "invalid parameter $1. Must be one of --build or --post_build <provider> <version>"
     exit 1
   fi
 }
