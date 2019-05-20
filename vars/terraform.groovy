@@ -2,17 +2,14 @@
 def call() {
   pipeline {
     agent none
-  environment {
-    TARGET_BRANCH = getTargetBranch()
-  }
+    environment { TARGET_BRANCH = getTargetBranch() }
     stages {
       stage('Run Tests') {
         parallel {
           stage('Terraform FMT') {
             agent { label 'terraform' }
             steps {
-              ansiColor('xterm') {
-                sh """
+              ansiColor('xterm') { sh """
                   #!/usr/bin/env sh
                   set +o xtrace
                   set -o errexit
@@ -21,38 +18,33 @@ def call() {
                     echo "FMT checking \${tf}"
                     terraform fmt --check --diff \${tf}
                   done
-                """
-              }
+                """ }
             }
           }
           stage('Terraform validate') {
             agent { label 'terraform' }
             steps {
-              ansiColor('xterm') {
-                sh """
+              ansiColor('xterm') { sh """
                   #!/usr/bin/env sh
                   set +o xtrace
                   set -o errexit
 
                   terraform init --upgrade
                   terraform validate -check-variables=false
-                """
-              }
+                """ }
             }
           }
           stage('Validate README go generated') {
             agent { label 'terraform' }
             steps {
-              ansiColor('xterm') {
-                sh """
+              ansiColor('xterm') { sh """
                   #!/usr/bin/env sh
                   set +o xtrace
                   set -o errexit
 
                   terraform-docs --sort-inputs-by-required md ./ > README.md
                   git --no-pager diff --exit-code
-                """
-              }
+                """ }
             }
           }
         }
@@ -97,20 +89,20 @@ def call() {
       stage("Check Environment Conditions") {
         agent { label 'dcos-terraform-cicd' }
         steps {
-                script {
-                    env.PROVIDER = sh (returnStdout: true, script: "echo ${env.GIT_URL} | egrep -o 'terraform-\\w+-.*'| cut -d'-' -f2").trim()
-                    env.UNIVERSAL_INSTALLER_BASE_VERSION = sh (returnStdout: true, script: "echo ${env.TARGET_BRANCH} | cut -d'/' -f2 -s").trim()
-                    env.IS_UNIVERSAL_INSTALLER = sh (returnStdout: true, script: "TFENV=\$(echo ${env.GIT_URL} | egrep -o 'terraform-\\w+-.*'); [ -z \$TFENV ] || echo 'YES'").trim()
-                }
-            }
+          script {
+            env.PROVIDER = sh (returnStdout: true, script: "echo ${env.GIT_URL} | egrep -o 'terraform-\\w+-.*'| cut -d'-' -f2").trim()
+            env.UNIVERSAL_INSTALLER_BASE_VERSION = sh (returnStdout: true, script: "echo ${env.TARGET_BRANCH} | cut -d'/' -f2 -s").trim()
+            env.IS_UNIVERSAL_INSTALLER = sh (returnStdout: true, script: "TFENV=\$(echo ${env.GIT_URL} | egrep -o 'terraform-\\w+-.*'); [ -z \$TFENV ] || echo 'YES'").trim()
+          }
         }
+      }
       stage('Integration Test') {
         when {
-            allOf {
-                expression { env.UNIVERSAL_INSTALLER_BASE_VERSION != "null" }
-                expression { env.UNIVERSAL_INSTALLER_BASE_VERSION != "" }
-                environment name: 'IS_UNIVERSAL_INSTALLER', value: 'YES'
-            }
+          allOf {
+            expression { env.UNIVERSAL_INSTALLER_BASE_VERSION != "null" }
+            expression { env.UNIVERSAL_INSTALLER_BASE_VERSION != "" }
+            environment name: 'IS_UNIVERSAL_INSTALLER', value: 'YES'
+          }
         }
         agent { label 'dcos-terraform-cicd' }
         steps {
