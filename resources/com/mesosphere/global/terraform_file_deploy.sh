@@ -1,24 +1,5 @@
 #!/usr/bin/env bash
 
-if [[ ! -f "ci-deploy.state" ]]
-then
-  TMP_DCOS_TERRAFORM=$(mktemp -d); echo "TMP_DCOS_TERRAFORM=${TMP_DCOS_TERRAFORM}" > ci-deploy.state
-  LOG_STATE=${TMP_DCOS_TERRAFORM}/log_state; echo "LOG_STATE=${TMP_DCOS_TERRAFORM}/log_state" >> ci-deploy.state
-  CI_DEPLOY_STATE=$PWD/ci-deploy.state; echo "CI_DEPLOY_STATE=$PWD/ci-deploy.state" >> ci-deploy.state
-  DCOS_CONFIG=${TMP_DCOS_TERRAFORM}; echo "DCOS_CONFIG=${TMP_DCOS_TERRAFORM}" >> ci-deploy.state
-  echo ${DCOS_CONFIG}
-  git clone https://github.com/dcos-terraform/jenkins-library.git
-  cp -fr jenkins-library/resources/com/mesosphere/global/terraform-file-dcos-terraform-test-examples/$2-$3/. "${TMP_DCOS_TERRAFORM}" || exit 1
-else
-  eval "$(cat ci-deploy.state)"
-fi
-
-if [[ -z "${WORKSPACE}" ]]; then echo "Updating ENV for non-Jenkins env";
-  WORKSPACE=$PWD;
-  GIT_URL=$(git -C ${WORKSPACE} remote -v | grep origin | tail -1 | awk '{print $2}');
-  CHANGE_BRANCH=$(git -C ${WORKSPACE} branch | awk '{print $2}');
-fi
-
 function build_task() {
   set -x
   cd ${TMP_DCOS_TERRAFORM} || exit 1
@@ -35,8 +16,8 @@ function build_task() {
 function generate_terraform_file() {
   set -x
   cd ${TMP_DCOS_TERRAFORM} || exit 1
-	PROVIDER=$(echo $1 | egrep  -o 'terraform-\w+-.*' | cut -d'.' -f 1 | cut -d'-' -f2)
-	TF_MODULE_NAME=$(echo $1 | egrep  -o 'terraform-\w+-.*' | cut -d'.' -f 1 | cut -d'-' -f3-)
+  PROVIDER=$(echo $1 | egrep  -o 'terraform-\w+-.*' | cut -d'.' -f 1 | cut -d'-' -f2)
+  TF_MODULE_NAME=$(echo $1 | egrep  -o 'terraform-\w+-.*' | cut -d'.' -f 1 | cut -d'-' -f3-)
   cat <<EOF | tee Terraformfile
 {
   "dcos-terraform/${TF_MODULE_NAME}/${PROVIDER}": {
@@ -109,13 +90,34 @@ EOF
 function main() {
   set -x
   if [[ $# -eq 3 ]]; then
-    case $1 in
-      --build) build_task; exit 0;;
-      --post_build) post_build_task; exit 0;;
-    esac
-    echo "invalid parameter $1. Must be one of --build or --post_build <provider> <version>"
-    exit 1
+    # ENV variables
+    if [[ ! -f "ci-deploy.state" ]]
+    then
+      TMP_DCOS_TERRAFORM=$(mktemp -d); echo "TMP_DCOS_TERRAFORM=${TMP_DCOS_TERRAFORM}" > ci-deploy.state
+      LOG_STATE=${TMP_DCOS_TERRAFORM}/log_state; echo "LOG_STATE=${TMP_DCOS_TERRAFORM}/log_state" >> ci-deploy.state
+      CI_DEPLOY_STATE=$PWD/ci-deploy.state; echo "CI_DEPLOY_STATE=$PWD/ci-deploy.state" >> ci-deploy.state
+      DCOS_CONFIG=${TMP_DCOS_TERRAFORM}; echo "DCOS_CONFIG=${TMP_DCOS_TERRAFORM}" >> ci-deploy.state
+      echo ${DCOS_CONFIG}
+      git clone https://github.com/dcos-terraform/jenkins-library.git
+      cp -fr jenkins-library/resources/com/mesosphere/global/terraform-file-dcos-terraform-test-examples/$2-$3/. "${TMP_DCOS_TERRAFORM}" || exit 1
+    else
+      eval "$(cat ci-deploy.state)"
+    fi
+
+    if [[ -z "${WORKSPACE}" ]]; then echo "Updating ENV for non-Jenkins env";
+      WORKSPACE=$PWD;
+      GIT_URL=$(git -C ${WORKSPACE} remote -v | grep origin | tail -1 | awk '{print $2}');
+      CHANGE_BRANCH=$(git -C ${WORKSPACE} branch | awk '{print $2}');
+    fi
+    # End of ENV variables
   fi
+
+  case $1 in
+    --build) build_task; exit 0;;
+    --post_build) post_build_task; exit 0;;
+  esac
+  echo "invalid parameter $1. Must be one of --build or --post_build <provider> <version>"
+  exit 1
 }
 
 set +x
