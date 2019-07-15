@@ -40,7 +40,31 @@ module "dcos" {
 
   dcos_variant              = "${var.dcos_variant}"
   dcos_license_key_contents = "${var.dcos_license_key_contents}"
+
+  additional_windows_private_agent_ips       = ["${concat(module.winagent.private_ips)}"]
+  additional_windows_private_agent_passwords = ["${concat(module.winagent.windows_passwords)}"]
 }
+
+module "winagent" {
+  source  = "dcos-terraform/windows-instance/aws"
+  version = "~> 0.2.1"
+
+  providers = {
+    aws = "aws"
+  }
+
+  cluster_name           = "${local.cluster_name}"
+  hostname_format        = "%[3]s-winagent%[1]d-%[2]s"
+  aws_subnet_ids         = ["${module.dcos.infrastructure.vpc.subnet_ids}"]
+  aws_security_group_ids = ["${module.dcos.infrastructure.security_groups.internal}", "${module.dcos.infrastructure.security_groups.admin}"]
+  aws_key_name           = "${module.dcos.infrastructure.aws_key_name}"
+  aws_instance_type      = "m5.xlarge"
+
+  # provide the number of windows agents that should be provisioned.
+  num = "1"
+}
+
+
 
 variable "dcos_instance_os" {
   default = "centos_7.5"
@@ -87,6 +111,9 @@ variable "num_public_agents" {
   default     = 1
 }
 
+output "winagent-ips" {
+  value = "${module.winagent.public-ips}"
+}
 output "masters-ips" {
   value = "${module.dcos.masters-ips}"
 }

@@ -177,6 +177,99 @@ EOF
   else
     echo -e "\e[32m nginx reached \e[0m"
   fi
+  echo -e "\e[34m deploying dotnet-sample \e[0m"
+  dcos marathon app add <<EOF
+{
+  "labels": {
+    "HAPROXY_DEPLOYMENT_GROUP": "dotnet-sample",
+    "HAPROXY_0_REDIRECT_TO_HTTPS": "true",
+    "HAPROXY_GROUP": "external",
+    "HAPROXY_DEPLOYMENT_ALT_PORT": "10005",
+    "HAPROXY_0_VHOST": "ec2-54-196-158-33.compute-1.amazonaws.com"
+  },
+  "id": "/dotnet-sample",
+  "acceptedResourceRoles": [
+    "*"
+  ],
+  "constraints": [
+    [
+      "os",
+      "LIKE",
+      "windows"
+    ]
+  ],
+  "container": {
+    "portMappings": [
+      {
+        "containerPort": 80,
+        "hostPort": 33333,
+        "protocol": "tcp",
+        "servicePort": 10004,
+        "name": "http"
+      }
+    ],
+    "type": "DOCKER",
+    "volumes": [],
+    "docker": {
+      "image": "mcr.microsoft.com/dotnet/core/samples:aspnetapp",
+      "forcePullImage": false,
+      "privileged": false,
+      "parameters": []
+    }
+  },
+  "cpus": 1,
+  "disk": 0,
+  "healthChecks": [
+    {
+      "gracePeriodSeconds": 15,
+      "ignoreHttp1xx": false,
+      "intervalSeconds": 3,
+      "maxConsecutiveFailures": 2,
+      "portIndex": 0,
+      "timeoutSeconds": 2,
+      "delaySeconds": 15,
+      "protocol": "HTTP",
+      "path": "/",
+      "ipProtocol": "IPv4"
+    }
+  ],
+  "instances": 1,
+  "maxLaunchDelaySeconds": 300,
+  "mem": 1024,
+  "gpus": 0,
+  "networks": [
+    {
+      "mode": "container/bridge"
+    }
+  ]
+}
+EOF
+  echo -e "\e[32m deployed dotnet-sample \e[0m"
+  timeout 120 bash <<EOF || ( echo -e "\e[31m failed to reach dotnet-sample... \e[0m" && exit 1 )
+while dcos marathon app show dotnet-sample | jq -e '.tasksHealthy != 1' > /dev/null 2>&1; do
+  if [ "$?" -ne "0" ]; then
+    echo -e "\e[34m waiting for dotnet-sample \e[0m"
+    sleep 10
+  fi
+done
+EOF
+  echo -e "\e[32m healthy dotnet-sample \e[0m"
+  echo -e "\e[34m curl dotnet-sample at http://$(terraform output winagent-ips):33333 \e[0m"
+  curl -I \
+    --silent \
+    --connect-timeout 5 \
+    --max-time 10 \
+    --retry 5 \
+    --retry-delay 0 \
+    --retry-max-time 50 \
+    --retry-connrefuse \
+    "http://$(terraform output winagent-ips):33333" | grep -q -F "HTTP/1.1 200 OK"
+  if [ $? -ne 0 ]; then
+    echo -e "\e[31m dotnet-sample not reached \e[0m" && exit 1
+  else
+    echo -e "\e[32m dotnet-sample reached \e[0m"
+  fi
+
   echo -e "\e[32m Finished app deploy test! \e[0m"
 }
 
