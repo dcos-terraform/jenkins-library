@@ -53,18 +53,32 @@ module "winagent" {
     aws = "aws"
   }
 
-  cluster_name           = "${local.cluster_name}"
+  cluster_name           = "${random_id.cluster_name.hex}"
   hostname_format        = "%[3]s-winagent%[1]d-%[2]s"
   aws_subnet_ids         = ["${module.dcos.infrastructure.vpc.subnet_ids}"]
-  aws_security_group_ids = ["${module.dcos.infrastructure.security_groups.internal}", "${module.dcos.infrastructure.security_groups.admin}"]
+  aws_security_group_ids = ["${aws_security_group.test_dotnet_sample.id}", "${module.dcos.infrastructure.security_groups.admin}"]
   aws_key_name           = "${module.dcos.infrastructure.aws_key_name}"
   aws_instance_type      = "m5.xlarge"
 
   # provide the number of windows agents that should be provisioned.
   num = "1"
 }
+resource "aws_security_group" "test_dotnet_sample" {
+  name        = "dcos-test_dotnet_sample"
+  description = "Allow incoming traffic to .NET application"
+  vpc_id      = "${module.dcos.infrastructure.vpc.id}"
 
+  ingress {
+    from_port   = "${var.dotnet_sample_port}"
+    to_port     = "${var.dotnet_sample_port}"
+    protocol    = "tcp"
+    cidr_blocks = ["${data.http.whatismyip.body}/32"]
+  }
+}
 
+variable "dotnet_sample_port" {
+  default = "33333"
+}
 
 variable "dcos_instance_os" {
   default = "centos_7.5"
@@ -112,8 +126,9 @@ variable "num_public_agents" {
 }
 
 output "winagent-ips" {
-  value = "${module.winagent.public-ips}"
+  value = "${module.winagent.public_ips}"
 }
+
 output "masters-ips" {
   value = "${module.dcos.masters-ips}"
 }

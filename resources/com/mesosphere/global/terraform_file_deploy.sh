@@ -185,7 +185,7 @@ EOF
     "HAPROXY_0_REDIRECT_TO_HTTPS": "true",
     "HAPROXY_GROUP": "external",
     "HAPROXY_DEPLOYMENT_ALT_PORT": "10005",
-    "HAPROXY_0_VHOST": "ec2-54-196-158-33.compute-1.amazonaws.com"
+    "HAPROXY_0_VHOST": $(terraform output public-agents-loadbalancer)
   },
   "id": "/dotnet-sample",
   "acceptedResourceRoles": [
