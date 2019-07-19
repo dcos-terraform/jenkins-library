@@ -125,7 +125,7 @@ EOF
   }
 }
 EOF
-  dcos package install --yes --options=marathon-lb-options.json marathon-lb  > /dev/null 2>&1 || exit 1
+  "${TMP_DCOS_TERRAFORM}"/dcos package install --yes --options=marathon-lb-options.json marathon-lb  > /dev/null 2>&1 || exit 1
   timeout 120 bash <<EOF || ( echo -e "\e[31m failed to deploy marathon-lb... \e[0m" && exit 1 )
 while dcos marathon task list --json | jq .[].healthCheckResults[].alive | grep -q -v true; do
   echo -e "\e[34m waiting for marathon-lb \e[0m"
@@ -135,7 +135,7 @@ EOF
   echo -e "\e[32m marathon-lb alive \e[0m"
 
   echo -e "\e[34m deploying nginx \e[0m"
-  dcos marathon app add <<EOF
+  "${TMP_DCOS_TERRAFORM}"/dcos marathon app add <<EOF
 {
   "id": "nginx",
   "networks": [
@@ -196,10 +196,10 @@ EOF
     echo -e "\e[31m nginx not reached \e[0m" && exit 1
   else
     echo -e "\e[32m nginx reached \e[0m"
-  dcos marathon app remove /nginx  
+  "${TMP_DCOS_TERRAFORM}"/dcos marathon app remove /nginx  
   fi
   echo -e "\e[34m deploying dotnet-sample \e[0m"
-  dcos marathon app add <<EOF
+  "${TMP_DCOS_TERRAFORM}"/dcos marathon app add <<EOF
 {
   "labels": {
     "HAPROXY_DEPLOYMENT_GROUP": "dotnet-sample",
