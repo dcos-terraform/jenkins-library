@@ -100,22 +100,42 @@ EOF
   fi
   cat <<EOF > marathon-lb-options.json
 {
-    "marathon-lb": {
-        "secret_name": "marathon-lb/service-account-secret",
-        "marathon-uri": "https://marathon.mesos:8443"
-    }
+  "marathon-lb": {
+    "auto-assign-service-ports": true,
+    "bind-http-https": true,
+    "cpus": 2,
+    "haproxy_global_default_options": "redispatch,http-server-close,dontlognull",
+    "haproxy-group": "external",
+    "haproxy-map": true,
+    "instances": 1,
+    "mem": 1024,
+    "minimumHealthCapacity": 0.5,
+    "maximumOverCapacity": 0.2,
+    "name": "marathon-lb",
+    "parameters": [],
+    "role": "slave_public",
+    "strict-mode": false,
+    "sysctl-params": "net.ipv4.tcp_tw_reuse=1 net.ipv4.tcp_fin_timeout=30 net.ipv4.tcp_max_syn_backlog=10240 net.ipv4.tcp_max_tw_buckets=400000 net.ipv4.tcp_max_orphans=60000 net.core.somaxconn=10000",
+    "container-syslogd": false,
+    "max-reload-retries": 10,
+    "reload-interval": 10,
+    "template-url": "",
+    "marathon-uri": "http://marathon.mesos:8080",
+    "secret_name": ""
+  }
 }
 EOF
-  "${TMP_DCOS_TERRAFORM}"/dcos package install --yes --options=marathon-lb-options.json marathon-lb > /dev/null 2>&1 || exit 1
-  timeout -t 120 bash <<EOF || ( echo -e "\e[31m failed to deploy marathon-lb... \e[0m" && exit 1 )
-while ${TMP_DCOS_TERRAFORM}/dcos marathon task list --json | jq .[].healthCheckResults[].alive | grep -q -v true; do
+  dcos package install --yes --options=marathon-lb-options.json marathon-lb  > /dev/null 2>&1 || exit 1
+  timeout 120 bash <<EOF || ( echo -e "\e[31m failed to deploy marathon-lb... \e[0m" && exit 1 )
+while dcos marathon task list --json | jq .[].healthCheckResults[].alive | grep -q -v true; do
   echo -e "\e[34m waiting for marathon-lb \e[0m"
   sleep 10
 done
 EOF
   echo -e "\e[32m marathon-lb alive \e[0m"
+
   echo -e "\e[34m deploying nginx \e[0m"
-  "${TMP_DCOS_TERRAFORM}"/dcos marathon app add <<EOF
+  dcos marathon app add <<EOF
 {
   "id": "nginx",
   "networks": [
@@ -152,8 +172,8 @@ EOF
 }
 EOF
   echo -e "\e[32m deployed nginx \e[0m"
-  timeout -t 120 bash <<EOF || ( echo -e "\e[31m failed to reach nginx... \e[0m" && exit 1 )
-while ${TMP_DCOS_TERRAFORM}/dcos marathon app show nginx | jq -e '.tasksHealthy != 1' > /dev/null 2>&1; do
+  timeout 120 bash <<EOF || ( echo -e "\e[31m failed to reach nginx... \e[0m" && exit 1 )
+while dcos marathon app show nginx | jq -e '.tasksHealthy != 1' > /dev/null 2>&1; do
   if [ "$?" -ne "0" ]; then
     echo -e "\e[34m waiting for nginx \e[0m"
     sleep 10
@@ -176,6 +196,7 @@ EOF
     echo -e "\e[31m nginx not reached \e[0m" && exit 1
   else
     echo -e "\e[32m nginx reached \e[0m"
+  dcos marathon app remove /nginx  
   fi
   echo -e "\e[34m deploying dotnet-sample \e[0m"
   dcos marathon app add <<EOF
@@ -184,8 +205,8 @@ EOF
     "HAPROXY_DEPLOYMENT_GROUP": "dotnet-sample",
     "HAPROXY_0_REDIRECT_TO_HTTPS": "true",
     "HAPROXY_GROUP": "external",
-    "HAPROXY_DEPLOYMENT_ALT_PORT": "10005",
-    "HAPROXY_0_VHOST": $(terraform output public-agents-loadbalancer)
+    "HAPROXY_DEPLOYMENT_ALT_PORT": "80",
+    "HAPROXY_0_VHOST": "dotnet-sample.mesosphere.com"
   },
   "id": "/dotnet-sample",
   "acceptedResourceRoles": [
@@ -204,7 +225,7 @@ EOF
         "containerPort": 80,
         "hostPort": 33333,
         "protocol": "tcp",
-        "servicePort": 10004,
+        "servicePort": 80,
         "name": "http"
       }
     ],
@@ -254,22 +275,22 @@ while dcos marathon app show dotnet-sample | jq -e '.tasksHealthy != 1' > /dev/n
 done
 EOF
   echo -e "\e[32m healthy dotnet-sample \e[0m"
-  echo -e "\e[34m curl dotnet-sample at http://$(terraform output winagent-ips):33333 \e[0m"
-  curl -I \
-    --silent \
-    --connect-timeout 5 \
-    --max-time 10 \
-    --retry 5 \
-    --retry-delay 0 \
-    --retry-max-time 50 \
-    --retry-connrefuse \
-    "http://$(terraform output winagent-ips):33333" | grep -q -F "HTTP/1.1 200 OK"
+  echo -e "\e[34m curl dotnet-sample.mesosphere.com at http://$(terraform output public-agents-loadbalancer) \e[0m"
+  curl -I -L \
+  --silent \
+  --connect-timeout 5 \
+  --max-time 10 \
+  --retry 10 \
+  --retry-delay 0 \
+  --retry-max-time 100 \
+  --show-error \
+  --retry-connrefuse \
+  -H "Host: dotnet-sample.mesosphere.com" "http://$(terraform output public-agents-loadbalancer)" | grep -q -F "HTTP/1.1 200 OK"
   if [ $? -ne 0 ]; then
     echo -e "\e[31m dotnet-sample not reached \e[0m" && exit 1
   else
     echo -e "\e[32m dotnet-sample reached \e[0m"
   fi
-
   echo -e "\e[32m Finished app deploy test! \e[0m"
 }
 
