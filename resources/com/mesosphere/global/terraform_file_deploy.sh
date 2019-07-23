@@ -176,6 +176,13 @@ EOF
     echo -e "\e[31m nginx not reached \e[0m" && exit 1
   else
     echo -e "\e[32m nginx reached \e[0m"
+  if $WINDOWS; then
+    windows_test_app
+  fi
+  echo -e "\e[32m Finished app deploy test! \e[0m"
+}
+
+windows_test_app(){
   "${TMP_DCOS_TERRAFORM}"/dcos marathon app remove /nginx  
   fi
   echo -e "\e[34m deploying dotnet-sample \e[0m"
@@ -271,7 +278,6 @@ EOF
   else
     echo -e "\e[32m dotnet-sample reached \e[0m"
   fi
-  echo -e "\e[32m Finished app deploy test! \e[0m"
 }
 
 main() {
@@ -298,6 +304,12 @@ main() {
       echo "${DCOS_CONFIG}"
       cp -fr ${WORKSPACE}/"${2}"-"${3}"/. "${TMP_DCOS_TERRAFORM}" || exit 1
     fi
+  fi
+
+  WINDOWS_ARG="--windows"
+  WINDOWS=false
+  if [ -n "$4" -a "$4" = "$WINDOWS_ARG" ]; then
+    WINDOWS=true
   fi
 
   case "${1}" in

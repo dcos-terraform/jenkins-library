@@ -47,7 +47,7 @@ module "dcos" {
 
 module "winagent" {
   source  = "dcos-terraform/windows-instance/aws"
-  version = "~> 0.2.1"
+  version = "0.0.1"
 
   providers = {
     aws = "aws"
