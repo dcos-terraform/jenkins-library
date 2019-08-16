@@ -14,8 +14,8 @@ echo -e "\e[34m deploying dotnet-sample \e[0m"
     "type": "DOCKER",
     "docker": {
       "image": "mcr.microsoft.com/dotnet/core/samples:aspnetapp",
-      "forcePullImage": true,
-    }
+      "forcePullImage": true
+    },
     "portMappings": [
       { "hostPort": 0, "containerPort": 80 }
     ]
