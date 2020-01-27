@@ -6,7 +6,7 @@ echo -e "\e[34m deploying dotnet-sample \e[0m"
 "${TMP_DCOS_TERRAFORM}"/dcos marathon app add <<EOF
 {
   "id": "/dotnet-sample",
-  "constraints": [[ "@region", "LIKE", "windows" ]],
+  "constraints": [[ "@region", "LIKE", "windows.*" ]],
   "networks": [
     { "mode": "container/bridge" }
   ],
@@ -43,7 +43,7 @@ echo -e "\e[34m deploying dotnet-sample \e[0m"
 EOF
 echo -e "\e[32m deployed dotnet-sample \e[0m"
 
-timeout -t 300 bash <<EOF || ( echo -e "\e[31m windows agent not active... \e[0m" && exit 1 )
+timeout -t 600 bash <<EOF || ( echo -e "\e[31m windows agent not active... \e[0m" && exit 1 )
 until ${TMP_DCOS_TERRAFORM}/dcos node list --json | jq -e '.[] | select(.attributes.os == "windows") | .active == true' > /dev/null 2>&1; do
   echo -e "\e[34m waiting for windows agent to become active \e[0m"
   sleep 10
