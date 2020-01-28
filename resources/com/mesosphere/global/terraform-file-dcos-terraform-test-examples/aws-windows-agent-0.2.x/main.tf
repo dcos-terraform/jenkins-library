@@ -39,7 +39,7 @@ dcos:
 connection_timeout: 60
 EOF
 
-  dcos_version = "${var.dcos_version}"
+  dcos_version = "2.1.0-dev"
 
   dcos_oauth_enabled = "false"
   dcos_security      = "permissive"
@@ -54,7 +54,7 @@ EOF
     aws = "aws"
   }
 
-  dcos_variant              = "2.1.0-dev"
+  dcos_variant              = "${var.dcos_variant}"
   dcos_license_key_contents = "${var.dcos_license_key_contents}"
 
   additional_windows_private_agent_ips       = ["${concat(module.winagent.private_ips)}"]
