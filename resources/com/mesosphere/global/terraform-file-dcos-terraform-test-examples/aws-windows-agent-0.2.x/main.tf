@@ -27,6 +27,7 @@ module "dcos" {
 
   #TO BE DELETED after Windows GA release
   custom_dcos_download_path = "https://downloads.mesosphere.com/dcos-enterprise/testing/master/dcos_generate_config.ee.sh"
+
   dcos_config = <<EOF
 enable_windows_agents: true
 EOF
