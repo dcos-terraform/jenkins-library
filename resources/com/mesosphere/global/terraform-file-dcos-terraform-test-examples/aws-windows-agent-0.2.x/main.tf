@@ -54,7 +54,7 @@ EOF
     aws = "aws"
   }
 
-  dcos_variant              = "${var.dcos_variant}"
+  dcos_variant              = "2.1.0-dev"
   dcos_license_key_contents = "${var.dcos_license_key_contents}"
 
   additional_windows_private_agent_ips       = ["${concat(module.winagent.private_ips)}"]
