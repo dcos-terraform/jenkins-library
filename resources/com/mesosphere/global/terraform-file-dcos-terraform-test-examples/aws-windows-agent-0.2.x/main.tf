@@ -26,23 +26,20 @@ module "dcos" {
   ansible_bundled_container = "mesosphere/dcos-ansible-bundle:windows"
 
   #TO BE DELETED after Windows GA release
-  custom_dcos_download_path = "https://downloads.mesosphere.com/dcos-enterprise/testing/master/dcos_generate_config.ee.sh"
-
-  dcos_config = <<EOF
-enable_windows_agents: true
-EOF
+  dcos_version                      = "2.1.0-beta2"
+  custom_dcos_download_path         = "${var.dcos_variant == "ee" ? "https://downloads.mesosphere.io/dcos-enterprise/testing/2.1.0-beta2/dcos_generate_config.ee.sh" : "https://downloads.dcos.io/dcos/testing/2.1.0-beta2/dcos_generate_config.sh"}"
+  custom_dcos_windows_download_path = "${var.dcos_variant == "ee" ? "https://downloads.mesosphere.com/dcos-enterprise/testing/2.1.0-beta2/windows/dcos_generate_config_win.ee.sh" : "https://downloads.dcos.io/dcos/testing/2.1.0-beta2/windows/dcos_generate_config_win.sh"}"
 
   #TO BE DELETED after Windows GA release
   ansible_additional_config = <<EOF
-dcos:
-   download_win: https://downloads.mesosphere.com/dcos-enterprise/testing/master/windows/dcos_generate_config_win.ee.sh
 connection_timeout: 60
 EOF
 
   dcos_version = "2.1.0-dev"
 
-  dcos_oauth_enabled = "false"
-  dcos_security      = "permissive"
+  dcos_oauth_enabled         = "false"
+  dcos_security              = "permissive"
+  dcos_enable_windows_agents = "true"
 
   dcos_instance_os             = "${var.dcos_instance_os}"
   bootstrap_instance_type      = "${var.bootstrap_instance_type}"
