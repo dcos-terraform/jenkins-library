@@ -35,8 +35,6 @@ module "dcos" {
 connection_timeout: 60
 EOF
 
-  dcos_version = "2.1.0-dev"
-
   dcos_oauth_enabled         = "false"
   dcos_security              = "permissive"
   dcos_enable_windows_agents = "true"
