@@ -23,32 +23,31 @@ module "dcos" {
   num_private_agents = "${var.num_private_agents}"
   num_public_agents  = "${var.num_public_agents}"
 
-  ansible_bundled_container = "mesosphere/dcos-ansible-bundle:windows-beta-support"
-
-  ansible_additional_config = <<EOF
-connection_timeout: 600
-dcos:
-  download_win: "https://downloads.mesosphere.com/dcos-enterprise/testing/2.1.0-beta1/windows/dcos_generate_config_win.ee.sh"
-EOF
+  ansible_bundled_container = "mesosphere/dcos-ansible-bundle:windows"
 
   additional_windows_private_agent_ips       = ["${concat(module.winagent.private_ips)}"]
   additional_windows_private_agent_passwords = ["${concat(module.winagent.windows_passwords)}"]
   additional_windows_private_agent_os_user   = "${module.winagent.admin_username}"
 
-  dcos_oauth_enabled = "false"
-  dcos_security      = "permissive"
+  #TO BE DELETED after Windows GA release
+  dcos_version                      = "2.1.0-beta2"
+  custom_dcos_download_path         = "${var.dcos_variant == "ee" ? "https://downloads.mesosphere.io/dcos-enterprise/testing/2.1.0-beta2/dcos_generate_config.ee.sh" : "https://downloads.dcos.io/dcos/testing/2.1.0-beta2/dcos_generate_config.sh"}"
+  custom_dcos_windows_download_path = "${var.dcos_variant == "ee" ? "https://downloads.mesosphere.com/dcos-enterprise/testing/2.1.0-beta2/windows/dcos_generate_config_win.ee.sh" : "https://downloads.dcos.io/dcos/testing/2.1.0-beta2/windows/dcos_generate_config_win.sh"}"
 
-  dcos_config = <<EOF
-enable_windows_agents: true
+  #TO BE DELETED after Windows GA release
+  ansible_additional_config = <<EOF
+  connection_timeout: 60
 EOF
+
+  dcos_oauth_enabled         = "false"
+  dcos_security              = "permissive"
+  dcos_enable_windows_agents = "true"
 
   providers = {
     azurerm = "azurerm"
   }
 
   #dcos_version = "${var.dcos_version}"
-  dcos_version              = "2.1.0-beta1"
-  custom_dcos_download_path = "${var.dcos_variant == "ee" ? "https://downloads.mesosphere.com/dcos-enterprise/testing/2.1.0-beta1/dcos_generate_config.ee.sh" : "https://downloads.dcos.io/dcos/testing/2.1.0-beta1/dcos_generate_config.sh"}"
   dcos_variant              = "${var.dcos_variant}"
   dcos_license_key_contents = "${var.dcos_license_key_contents}"
 }
