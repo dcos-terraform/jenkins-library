@@ -48,14 +48,6 @@ build_task() {
   if [ $return_code -ne 0 ]; then exit 1; fi
   echo -e "\e[32m Finished agent_app_test.sh! \e[0m"
 
-  if [ "${ADD_WINDOWS_AGENT}" == "true" ] ; then
-    # shellcheck source=./windows_agent_app_test.sh
-    source ${WORKSPACE}/windows_agent_app_test.sh
-    return_code=$?
-    if [ $return_code -ne 0 ]; then exit 1; fi
-    echo -e "\e[32m Finished windows_agent_app_test.sh! \e[0m"
-  fi
-
   echo -e "\e[32m Finished app deploy test! \e[0m"
   # Expand
   echo -e "\e[32m Starting adding more agents! \e[0m"
