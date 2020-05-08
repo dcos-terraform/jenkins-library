@@ -4,7 +4,7 @@ set +o errexit
 
 PROVIDER="${1}"
 ln -sf ${WORKSPACE} symlink_to_workspace
-if [ ${TF_MODULE_NAME} == "dcos" ] || [ ${TF_MODULE_NAME} == "windows-instance" ]; then
+if [ ${TF_MODULE_NAME} == "dcos" ]; then
   TF_MODULE_SOURCE="./symlink_to_workspace"
 else
   TF_MODULE_SOURCE="./../../../../symlink_to_workspace"
