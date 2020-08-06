@@ -125,7 +125,7 @@ def call() {
         agent { label 'terraform' }
         steps {
           ansiColor('xterm') {
-            scripts {
+            script {
               def tfenv_script = libraryResource 'com/mesosphere/global/tfenv.sh'
               writeFile file: 'tfenv.sh', text: tfenv_script
             }
