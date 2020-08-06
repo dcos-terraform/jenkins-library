@@ -33,6 +33,42 @@ def call() {
           }
         }
       }
+      stage("Build environment vars") {
+        when {
+          beforeAgent true
+          not { changelog '.*^\\[ci-skip\\].+$' }
+        }
+        agent { label 'dcos-terraform-cicd' }
+        steps {
+          script {
+            env.PROVIDER = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\necho ${env.GIT_URL} | awk -F '-' '/terraform/ {print \$3}'").trim()
+            env.MODULEPROVIDER = env.PROVIDER
+            def m = env.PROVIDER ==~ /^(aws|azurerm|gcp)$/
+            if (!m) {
+              env.PROVIDER = 'aws'
+            }
+            env.UNIVERSAL_INSTALLER_BASE_VERSION = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\ngit describe --abbrev=0 --tags 2>/dev/null | sed -r 's/\\.([0-9]+)\$/.x/'").trim()
+            if (!env.UNIVERSAL_INSTALLER_BASE_VERSION || env.UNIVERSAL_INSTALLER_BASE_VERSION.take(1).toInteger() >= 1) {
+              env.UNIVERSAL_INSTALLER_BASE_VERSION = getTargetBranch().tokenize('/').last()
+            }
+            env.IS_UNIVERSAL_INSTALLER = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\nTFENV=\$(echo ${env.GIT_URL} | awk -F '-' '/terraform/ {print \$2}'); [ -z \$TFENV ] || echo 'YES'").trim()
+            env.TF_MODULE_NAME = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\necho ${env.GIT_URL} | grep -E -o 'terraform-\\w+-.*' | cut -d'.' -f 1 | cut -d'-' -f3-").trim()
+          }
+          ansiColor('xterm') {
+            sh """
+              #!/usr/bin/env sh
+              set +o xtrace
+              set -o errexit
+
+              echo -e "\\e[34m Detected and set provider: ${env.PROVIDER} \\e[0m"
+              echo -e "\\e[34m Detected and set module provider: ${env.MODULEPROVIDER} \\e[0m"
+              echo -e "\\e[34m Detected universal install base version: ${env.UNIVERSAL_INSTALLER_BASE_VERSION} \\e[0m"
+              echo -e "\\e[34m Detected universal installer related build: ${env.IS_UNIVERSAL_INSTALLER} \\e[0m"
+              echo -e "\\e[34m Detected terraform module name: ${env.TF_MODULE_NAME} \\e[0m"
+            """
+          }
+        }
+      }
       stage('Preparing') {
         parallel {
           stage('Terraform validate') {
@@ -43,13 +79,19 @@ def call() {
             agent { label 'terraform' }
             steps {
               ansiColor('xterm') {
+                script {
+                  def validate_script = libraryResource 'com/mesosphere/global/validate.sh'
+                  writeFile file: 'validate.sh', text: validate_script
+                  def tfenv_script = libraryResource 'com/mesosphere/global/tfenv.sh'
+                  writeFile file: 'tfenv.sh', text: tfenv_script
+                }
                 sh """
                   #!/usr/bin/env sh
                   set +o xtrace
                   set -o errexit
 
-                  terraform init -upgrade
-                  terraform validate -check-variables=false
+                  bash ./tfenv.sh ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
+                  bash ./validate.sh
                 """
               }
             }
@@ -67,46 +109,10 @@ def call() {
                   set +o xtrace
                   set -o errexit
 
-                  wget -O tfdescsan.tsv https://dcos-terraform-mappings.mesosphere.com/
+                  wget -L -O tfdescsan.tsv https://dcos-terraform-mappings.mesosphere.com/
                 """
               }
               stash includes: 'tfdescsan.tsv', name: 'tfdescsan.tsv'
-            }
-          }
-          stage("Build environment vars") {
-            when {
-              beforeAgent true
-              not { changelog '.*^\\[ci-skip\\].+$' }
-            }
-            agent { label 'dcos-terraform-cicd' }
-            steps {
-              script {
-                env.PROVIDER = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\necho ${env.GIT_URL} | awk -F '-' '/terraform/ {print \$3}'").trim()
-                env.MODULEPROVIDER = env.PROVIDER
-                def m = env.PROVIDER ==~ /^(aws|azurerm|gcp)$/
-                if (!m) {
-                  env.PROVIDER = 'aws'
-                }
-                env.UNIVERSAL_INSTALLER_BASE_VERSION = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\ngit describe --abbrev=0 --tags 2>/dev/null | sed -r 's/\\.([0-9]+)\$/.x/'").trim()
-                if (!env.UNIVERSAL_INSTALLER_BASE_VERSION || env.UNIVERSAL_INSTALLER_BASE_VERSION.take(1).toInteger() >= 1) {
-                  env.UNIVERSAL_INSTALLER_BASE_VERSION = getTargetBranch().tokenize('/').last()
-                }
-                env.IS_UNIVERSAL_INSTALLER = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\nTFENV=\$(echo ${env.GIT_URL} | awk -F '-' '/terraform/ {print \$2}'); [ -z \$TFENV ] || echo 'YES'").trim()
-                env.TF_MODULE_NAME = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\necho ${env.GIT_URL} | grep -E -o 'terraform-\\w+-.*' | cut -d'.' -f 1 | cut -d'-' -f3-").trim()
-              }
-              ansiColor('xterm') {
-                sh """
-                  #!/usr/bin/env sh
-                  set +o xtrace
-                  set -o errexit
-
-                  echo -e "\\e[34m Detected and set provider: ${env.PROVIDER} \\e[0m"
-                  echo -e "\\e[34m Detected and set module provider: ${env.MODULEPROVIDER} \\e[0m"
-                  echo -e "\\e[34m Detected universal install base version: ${env.UNIVERSAL_INSTALLER_BASE_VERSION} \\e[0m"
-                  echo -e "\\e[34m Detected universal installer related build: ${env.IS_UNIVERSAL_INSTALLER} \\e[0m"
-                  echo -e "\\e[34m Detected terraform module name: ${env.TF_MODULE_NAME} \\e[0m"
-                """
-              }
             }
           }
         }
@@ -119,10 +125,16 @@ def call() {
         agent { label 'terraform' }
         steps {
           ansiColor('xterm') {
+            scripts {
+              def tfenv_script = libraryResource 'com/mesosphere/global/tfenv.sh'
+              writeFile file: 'tfenv.sh', text: tfenv_script
+            }
             sh """
               #!/usr/bin/env sh
               set +o xtrace
               set -o errexit
+
+              bash ./tfenv.sh ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
 
               for tf in *.tf; do
                 echo -e "\\e[34m FMT \${tf} \\e[0m"
@@ -236,11 +248,15 @@ def call() {
                     writeFile file: 'install_marathon-lb.sh', text: install_marathon_lb
                     def agent_app_test = libraryResource 'com/mesosphere/global/agent_app_test.sh'
                     writeFile file: 'agent_app_test.sh', text: agent_app_test
+                    def tfenv_script = libraryResource 'com/mesosphere/global/tfenv.sh'
+                    writeFile file: 'tfenv.sh', text: tfenv_script
                   }
                   sh """
                     #!/usr/bin/env sh
                     set +o xtrace
                     set -o errexit
+
+                    bash ./tfenv.sh ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
 
                     bash ./integration_test.sh --build ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
                   """
@@ -263,11 +279,15 @@ def call() {
                     script {
                       def integration_test = libraryResource 'com/mesosphere/global/integration_test.sh'
                       writeFile file: 'integration_test.sh', text: integration_test
+                      def tfenv_script = libraryResource 'com/mesosphere/global/tfenv.sh'
+                      writeFile file: 'tfenv.sh', text: tfenv_script
                     }
                     sh """
                       #!/usr/bin/env sh
                       set +o xtrace
                       set -o errexit
+
+                      bash ./tfenv.sh ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
 
                       bash ./integration_test.sh --post_build ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
                     """
