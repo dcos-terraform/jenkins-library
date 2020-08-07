@@ -25,7 +25,7 @@ curl --insecure \
   -o /dev/null \
   "https://$(terraform output cluster-address)"
 echo -e "\e[32m reached the cluster \e[0m"
-timeout -t 120 bash <<EOF || ( echo -e "\e[31m failed dcos cluster setup / login... \e[0m" && exit 1 )
+timeout 120 bash <<EOF || ( echo -e "\e[31m failed dcos cluster setup / login... \e[0m" && exit 1 )
 while true; do
   ${TMP_DCOS_TERRAFORM}/dcos cluster setup "https://$(terraform output cluster-address)" --no-check --insecure --provider=dcos-users --username=bootstrapuser --password=deleteme
   if [ $? -eq 0 ]; then

@@ -62,7 +62,7 @@ BASE64_CONFIG=$(cat nginx-default.conf | base64 | sed ':a;N;$!ba;s/\n//g')
 }
 EOF
 echo -e "\e[32m deployed nginx \e[0m"
-timeout -t 120 bash <<EOF || ( echo -e "\e[31m failed to reach nginx... \e[0m" && exit 1 )
+timeout 120 bash <<EOF || ( echo -e "\e[31m failed to reach nginx... \e[0m" && exit 1 )
 while ${TMP_DCOS_TERRAFORM}/dcos marathon app show nginx | jq -e '.tasksHealthy != 1' > /dev/null 2>&1; do
   echo -e "\e[34m waiting for nginx \e[0m"
   sleep 10
