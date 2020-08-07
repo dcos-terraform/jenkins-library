@@ -110,7 +110,8 @@ def call() {
                   set +o xtrace
                   set -o errexit
 
-                  wget -L -O tfdescsan.tsv https://dcos-terraform-mappings.mesosphere.com/
+                  echo "skipped"
+                  # wget -L -O tfdescsan.tsv https://dcos-terraform-mappings.mesosphere.com/
                 """
               }
               stash includes: 'tfdescsan.tsv', name: 'tfdescsan.tsv'
@@ -166,7 +167,8 @@ def call() {
 
               for tf in \$FILES; do
                 echo -e "\\e[34m Scanning \${tf} \\e[0m"
-                tfdescsan --inplace --tsv tfdescsan.tsv --var \${tf} --cloud \"\${CLOUD}\"
+                echo "skipped
+                # tfdescsan --inplace --tsv tfdescsan.tsv --var \${tf} --cloud \"\${CLOUD}\"
               done
             """
           }
