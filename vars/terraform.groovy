@@ -167,7 +167,6 @@ def call() {
               for tf in \$FILES; do
                 echo -e "\\e[34m Scanning \${tf} \\e[0m"
                 echo "skipped
-                echo tfdescsan --inplace --tsv tfdescsan.tsv --var \${tf} --cloud \"\${CLOUD}\"
               done
             """
           }
