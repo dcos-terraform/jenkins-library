@@ -162,12 +162,6 @@ def call() {
 
               CLOUD=\$(echo \${JOB_NAME##*/terraform-} | sed -E \"s/(rm)?-.*//\")
               echo -e "\\e[34m Detected cloud: \${CLOUD} \\e[0m"
-              FILES=\$(egrep -H -r '^(variable \")|^(output \")' *.tf | cut -d: -f1 | uniq | sed 's/:.*//')
-
-              for tf in \$FILES; do
-                echo -e "\\e[34m Scanning \${tf} \\e[0m"
-                echo "skipped
-              done
             """
           }
           stash includes: '*.tf', name: 'tfdescsan'
