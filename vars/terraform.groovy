@@ -46,7 +46,6 @@ def call() {
             def m = env.PROVIDER ==~ /^(aws|azurerm|gcp)$/
             if (!m) {
               env.PROVIDER = 'aws'
-              env.AWS_DEFAULT_REGION = 'us-east-1'
             }
             env.UNIVERSAL_INSTALLER_BASE_VERSION = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\ngit describe --abbrev=0 --tags 2>/dev/null | sed -r 's/\\.([0-9]+)\$/.x/'").trim()
             if (!env.UNIVERSAL_INSTALLER_BASE_VERSION || env.UNIVERSAL_INSTALLER_BASE_VERSION.take(1).toInteger() >= 1) {
@@ -91,6 +90,7 @@ def call() {
                   set +o xtrace
                   set -o errexit
 
+                  export AWS_DEFAULT_REGION=us-east-1
                   bash ./tfenv.sh ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
                   bash ./validate.sh
                 """
