@@ -5,7 +5,7 @@ set -o errexit
 build_task() {
   cd "${TMP_DCOS_TERRAFORM}" || exit 1
   # shellcheck source=./create_terraformfile.sh
-  source ${WORKSPACE}/create_terraformfile.sh ${MODULEPROVIDER}
+  source ${WORKSPACE}/create_terraformfile.sh ${MODULEPROVIDER} ${UNIVERSAL_EXACT_VERSION}
   eval "$(ssh-agent)";
   if [ ! -f "$PWD/ssh-key" ]; then
     rm -f ssh-key.pub; ssh-keygen -t rsa -b 4096 -f "${PWD}"/ssh-key -P '';
@@ -119,6 +119,7 @@ main() {
       PROVIDER=${2};
       UNIVERSAL_INSTALLER_BASE_VERSION=${3};
       MODULEPROVIDER=${4};
+      UNIVERSAL_EXACT_VERSION=${5};
       TMP_DCOS_TERRAFORM=$(mktemp -d -p ${WORKSPACE});
       echo "TMP_DCOS_TERRAFORM=${TMP_DCOS_TERRAFORM}" > ci-deploy.state
       CI_DEPLOY_STATE=$PWD/ci-deploy.state;

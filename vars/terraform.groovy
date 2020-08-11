@@ -48,6 +48,7 @@ def call() {
               env.PROVIDER = 'aws'
             }
             env.UNIVERSAL_INSTALLER_BASE_VERSION = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\ngit describe --abbrev=0 --tags 2>/dev/null | sed -r 's/\\.([0-9]+)\$/.x/'").trim()
+            env.UNIVERSAL_EXACT_VERSION = sh (returnStdout: true, script: "#!/usr/bin/env sh\nset +o errexit\ngit describe --abbrev=0 --tags 2>/dev/null").trim()
             if (!env.UNIVERSAL_INSTALLER_BASE_VERSION || env.UNIVERSAL_INSTALLER_BASE_VERSION.take(1).toInteger() >= 1) {
               env.UNIVERSAL_INSTALLER_BASE_VERSION = getTargetBranch().tokenize('/').last()
             }
@@ -63,6 +64,7 @@ def call() {
               echo -e "\\e[34m Detected and set provider: ${env.PROVIDER} \\e[0m"
               echo -e "\\e[34m Detected and set module provider: ${env.MODULEPROVIDER} \\e[0m"
               echo -e "\\e[34m Detected universal install base version: ${env.UNIVERSAL_INSTALLER_BASE_VERSION} \\e[0m"
+              echo -e "\\e[34m Detected universal exact version: ${env.UNIVERSAL_EXACT_VERSION} \\e[0m"
               echo -e "\\e[34m Detected universal installer related build: ${env.IS_UNIVERSAL_INSTALLER} \\e[0m"
               echo -e "\\e[34m Detected terraform module name: ${env.TF_MODULE_NAME} \\e[0m"
             """
@@ -253,7 +255,7 @@ def call() {
 
                     bash ./tfenv.sh ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
 
-                    bash ./integration_test.sh --build ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
+                    bash ./integration_test.sh --build ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER} ${UNIVERSAL_EXACT_VERSION}
                   """
                 }
               }
@@ -284,7 +286,7 @@ def call() {
 
                       bash ./tfenv.sh ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
 
-                      bash ./integration_test.sh --post_build ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER}
+                      bash ./integration_test.sh --post_build ${PROVIDER} ${UNIVERSAL_INSTALLER_BASE_VERSION} ${MODULEPROVIDER} ${UNIVERSAL_EXACT_VERSION}
                     """
                     archiveArtifacts artifacts: 'terraform.*.tfstate', fingerprint: true
                     archiveArtifacts artifacts: 'terraform.integration-test-step.log', fingerprint: true
