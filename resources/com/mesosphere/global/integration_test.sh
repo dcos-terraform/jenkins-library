@@ -104,7 +104,7 @@ post_build_task() {
 }
 
 main() {
-  if [ $# -eq 4 ]; then
+  if [ $# -ge 4 ]; then
     if [ -f "ci-deploy.state"  ]; then
       eval "$(cat ci-deploy.state)"
     fi

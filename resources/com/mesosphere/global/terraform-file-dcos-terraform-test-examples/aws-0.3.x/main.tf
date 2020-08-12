@@ -35,7 +35,7 @@ module "dcos" {
   public_agents_instance_type  = var.public_agents_instance_type
 
   providers = {
-    aws = "aws"
+    aws = aws
   }
 
   dcos_variant              = var.dcos_variant
