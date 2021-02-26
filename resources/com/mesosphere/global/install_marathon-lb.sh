@@ -28,7 +28,7 @@ EOF
 return_code=$?
 
 if [ $return_code -eq 0 ]; then
-  timeout -t 120 bash <<EOF || ( echo -e "\e[31m failed to deploy marathon-lb... \e[0m" && exit 1 )
+  timeout 120 bash <<EOF || ( echo -e "\e[31m failed to deploy marathon-lb... \e[0m" && exit 1 )
 while "${TMP_DCOS_TERRAFORM}"/dcos marathon task list --json | jq .[].healthCheckResults[].alive | grep -q -v true; do
   echo -e "\e[34m waiting for marathon-lb \e[0m"
   sleep 10
